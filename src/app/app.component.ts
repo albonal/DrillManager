@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html'
+  template: '<app-drill></app-drill>'
 })
 export class AppComponent {
   title = 'DrillManager';

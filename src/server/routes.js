@@ -4,7 +4,7 @@ const router = express.Router();
 router.get('/drills', (req,res) => {
 
     res.send(200, [
-        {"id":10, "name": "Drill1" }
+        {"id":1, "name": "Drill1" },{"id":2, "name": "Drill2" }
     ])
 });
 module.exports = router;

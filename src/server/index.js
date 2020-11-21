@@ -15,4 +15,4 @@ app.get('*', (req,res) => {
     res.sendFile('dist/index.html',{root});
 });
 
-app.listen(port , () => console.log('api running on localhost: ${port}'));
+app.listen(port , () => console.log(`'api running on localhost: ${port}`));

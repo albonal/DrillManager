@@ -1,10 +1,9 @@
-import { Drill } from './../drill';
+import { Drill } from './drill';
 import { Component, OnInit } from '@angular/core';
-import { DrillService } from '../drill.service';
+import { DrillService } from './drill.service';
 @Component({
   selector: 'app-drill',
-  templateUrl: './drill.component.html',
-  styleUrls: ['./drill.component.css']
+  templateUrl: './drill.component.html'
 })
 export class DrillComponent implements OnInit {
   drills: Drill[] = [];
