@@ -7,6 +7,7 @@ import { DrillService } from './drill.service';
   selector: 'app-drill',
   templateUrl: './drill.component.html'
 })
+
 export class DrillComponent implements OnInit {
   drills: Drill[] = [];
   newDrill : Drill = new Drill(0,"") ;
@@ -20,10 +21,6 @@ export class DrillComponent implements OnInit {
     return this.drillService.getDrills().subscribe(drills => {
       this.drills = drills;
     });
-  }
-
-  cancel() {
-
   }
 
   save() {

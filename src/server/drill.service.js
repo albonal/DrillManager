@@ -29,6 +29,7 @@ function checkServerError(res, error) {
         return error;
     }
 }
+
 module.exports = {
   getDrills,
   postDrill
