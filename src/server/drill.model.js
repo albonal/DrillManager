@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const drillSchema = new Schema(
   {
-    id: { type: Number, required: true, unique: true },
+    id: { type: Number, required: true, unique: true},
     name: String
   },
   {

@@ -1,7 +1,5 @@
 const Drill = require('./drill.model');
 
-
-
 function getDrills(req,res) {
   const docquery = Drill.find({});
   docquery
