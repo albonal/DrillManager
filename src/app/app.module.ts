@@ -14,7 +14,8 @@ import { DrillComponent } from './drill.component';
   ],
   imports: [
     BrowserModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule
   ],
   providers: [DrillService],
   bootstrap: [AppComponent]

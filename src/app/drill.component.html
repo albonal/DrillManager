@@ -3,4 +3,18 @@
     <div>{{drill.id}}:{{drill.name}}</div>
 </div>
 
+<h2>Add drills</h2>
+    <div>
+      <label>id: </label>
+      <input [(ngModel)]="newDrill.id" placeholder="id"  />
+    </div>
+    <div>
+      <label>name: </label>
+      <input [(ngModel)]="newDrill.name" placeholder="name" />
+    </div>
+
+  <button (click)="cancel()">Cancel</button>
+  <button (click)="save()">Save</button>
+
+
   
