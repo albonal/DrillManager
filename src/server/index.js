@@ -5,7 +5,7 @@ const routes = require('./routes');
 const db = require('./mongo');
 
 const root = './';
-const port = process.env.Port || 3000;
+const port = process.env.Port || 8080;
 const app = express();
 
 db.connect();

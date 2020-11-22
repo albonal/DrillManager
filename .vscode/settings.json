@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/0197f173-28a3-4b21-948b-f3cdeecd59eb/resourceGroups/ArduinoApps/providers/Microsoft.Web/sites/arduinoapps",
+    "appService.deploySubpath": "."
+}
