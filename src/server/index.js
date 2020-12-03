@@ -3,10 +3,13 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const routes = require('./routes');
 const db = require('./mongo');
+const tcpServer = require('./tcpServer');
 
 const root = './';
-const port = process.env.Port || 8080;
+const port = process.env.Port || 3000;
 const app = express();
+
+tcpServer.startTcpServer(11000);
 
 db.connect();
 
