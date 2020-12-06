@@ -3,13 +3,10 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const routes = require('./routes');
 const db = require('./mongo');
-const tcpServer = require('./tcpServer');
 
 const root = './';
 const port = process.env.Port || 3000;
 const app = express();
-
-tcpServer.startTcpServer(11000);
 
 db.connect();
 
@@ -22,3 +19,47 @@ app.get('*', (req,res) => {
 });
 
 app.listen(port , () => console.log(`'api running on localhost: ${port}`));
+
+const net = require('net');
+const ip = require('ip');
+
+const tcpServer = net.createServer(onClientConnection);
+tcpServer.listen(11000,ip.address(), function() {console.log (`tcp server started ${ip.address()}`);})
+
+
+const Drill = require('./drill.model');
+
+function logSensor(sensorId,sensorData) {
+    const originalDrill = {id: sensorId, name: sensorData };
+    const drill = new Drill(originalDrill);
+    drill.save(error => {
+        if (error) return;
+       
+        console.log('drill created');
+    });
+}
+
+var  x=0;
+
+function onClientConnection(sock) {
+
+    sock.on('data',function(data) {
+
+        if (data.includes("BUTTON_PRESSED")) {
+            x=x+1;
+            logSensor("TempSensor", new Date().toISOString());
+            if (x%2 == 0) {
+                data = data + ".Action:BLINK";
+            }
+        }
+        sock.write(`OK: Logged: ${data}.`);
+     });
+
+    sock.on('close',function() { 
+        console.log(`connection terminated`);
+    });
+
+    sock.on('error',function(error) { 
+        console.log(`error ${error}`);
+    });
+};

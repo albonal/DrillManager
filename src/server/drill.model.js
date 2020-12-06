@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const drillSchema = new Schema(
   {
-    id: { type: Number, required: true, unique: true},
-    name: String
+    id: { type: String, required: true},
+    name: { type: String, required: true}
   },
   {
     collection: 'Drills'
