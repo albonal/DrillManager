@@ -10,7 +10,7 @@ import { DrillService } from './drill.service';
 
 export class DrillComponent implements OnInit {
   drills: Drill[] = [];
-  newDrill : Drill = new Drill(0,"") ;
+  newDrill : Drill = new Drill("0","") ;
   constructor( private drillService: DrillService) { }
 
   ngOnInit(): void {
@@ -26,6 +26,18 @@ export class DrillComponent implements OnInit {
   save() {
     this.drillService.addDrill(this.newDrill).subscribe(drill=> {
       this.drills.push(drill);
-    })
+    });
+  }
+
+  turnOnLed() {
+    this.drillService.turnOnLed(this.newDrill).subscribe(drill=> {
+      this.drills.push(drill);
+    });
+  }
+
+  turnOffLed() {
+    this.drillService.turnOffLed(this.newDrill).subscribe(drill=> {
+      this.drills.push(drill);
+    });
   }
 }

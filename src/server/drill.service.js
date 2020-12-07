@@ -1,4 +1,5 @@
 const Drill = require('./drill.model');
+const Status = require('./led');
 
 function getDrills(req,res) {
   const docquery = Drill.find({});
@@ -23,6 +24,20 @@ function postDrill(req,res) {
     });
 }
 
+function turnOnLED(req,res) {
+
+  Status.setStatus("ON");
+  res.status(200).json();
+      console.log('turnOnLED');
+}
+
+function turnOffLED(req,res) {
+
+  Status.setStatus("OFF");
+  res.status(200).json();
+  console.log('turnOffLED');
+}
+
 function checkServerError(res, error) {
     if (error) {
         res.status(500).send(error);
@@ -32,5 +47,8 @@ function checkServerError(res, error) {
 
 module.exports = {
   getDrills,
-  postDrill
+  postDrill,
+  turnOnLED,
+  turnOffLED,
+  
 };

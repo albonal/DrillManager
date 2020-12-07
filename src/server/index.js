@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const routes = require('./routes');
 const db = require('./mongo');
-
+const Status = require('./led');
 const root = './';
 const port = process.env.Port || 3000;
 const app = express();
@@ -29,6 +29,8 @@ tcpServer.listen(11000,ip.address(), function() {console.log (`tcp server starte
 
 const Drill = require('./drill.model');
 
+
+
 function logSensor(sensorId,sensorData) {
     const originalDrill = {id: sensorId, name: sensorData };
     const drill = new Drill(originalDrill);
@@ -47,11 +49,20 @@ function onClientConnection(sock) {
 
         if (data.includes("BUTTON_PRESSED")) {
             x=x+1;
-            logSensor("TempSensor", new Date().toISOString());
+            logSensor("TempSensor", new Date().toISOString() + ":" + data);
             if (x%2 == 0) {
                 data = data + ".Action:BLINK";
             }
         }
+
+        if (Status.getStatus() == "ON") {
+            data = data + ".Action:ON";
+        }
+
+        if (Status.getStatus() == "OFF") {
+            data = data + ".Action:OFF";
+        }
+
         sock.write(`OK: Logged: ${data}.`);
      });
 

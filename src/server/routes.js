@@ -9,4 +9,13 @@ router.get('/drills', (req,res) => {
 router.post('/drill',(req,res) => {
     drillService.postDrill(req,res);
 });
+
+router.post('/turnOnLED',(req,res) => {
+    drillService.turnOnLED(req,res);
+});
+
+router.post('/turnOffLED',(req,res) => {
+    drillService.turnOffLED(req,res);
+});
+
 module.exports = router;

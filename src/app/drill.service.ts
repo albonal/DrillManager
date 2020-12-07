@@ -20,4 +20,13 @@ export class DrillService {
     return this.http.post<Drill>(`${api}/drill`,drill);
   }
 
+  turnOnLed(drill: Drill) {
+    return this.http.post<Drill>(`${api}/turnOnLed`,drill);
+  }
+
+  turnOffLed(drill: Drill) {
+    return this.http.post<Drill>(`${api}/turnOffLed`,drill);
+  }
+
+
 }
