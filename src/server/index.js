@@ -37,33 +37,30 @@ function logSensor(sensorId,sensorData) {
     drill.save(error => {
         if (error) return;
        
-        console.log('drill created');
+        console.log('data logged in database');
     });
 }
-
-var  x=0;
 
 function onClientConnection(sock) {
 
     sock.on('data',function(data) {
-
-        if (data.includes("BUTTON_PRESSED")) {
-            x=x+1;
-            logSensor("TempSensor", new Date().toISOString() + ":" + data);
-            if (x%2 == 0) {
-                data = data + ".Action:BLINK";
-            }
+        var reply = "OK ";
+        if (data.includes("LOG_TEMPERATURE")) {
+            var d = data.toString();
+            var temperature = d.substring(d.lastIndexOf(":")+2,d.length);
+            logSensor("Temperature", new Date().toDateString() + " " + new Date().toLocaleTimeString() + ": " + temperature + "C");
+            reply = reply + "Action:BLINK";
         }
 
         if (Status.getStatus() == "ON") {
-            data = data + ".Action:ON";
+            reply = reply + "Action:ON";
         }
 
         if (Status.getStatus() == "OFF") {
-            data = data + ".Action:OFF";
+            reply = reply + "Action:OFF";
         }
 
-        sock.write(`OK: Logged: ${data}.`);
+        sock.write(reply);
      });
 
     sock.on('close',function() { 
