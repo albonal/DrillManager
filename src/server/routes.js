@@ -1,21 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const drillService = require('./drill.service');
+const chipService = require('./chip/chip.service');
 
-router.get('/drills', (req,res) => {
-    drillService.getDrills(req, res);
+router.get('/chips', (req,res) => {
+    chipService.getChips(req, res);
 });
 
-router.post('/drill',(req,res) => {
-    drillService.postDrill(req,res);
+router.post('/chip',(req,res) => {
+    chipService.postChip(req,res);
 });
+
+router.put('/chip/:mac', (req, res) => {
+    chipService.updateChip(req, res);
+  });
+
+router.delete('/chip/:mac', (req, res) => {
+    chipService.deleteChip(req, res);
+  });
 
 router.post('/turnOnLED',(req,res) => {
-    drillService.turnOnLED(req,res);
+    chipService.turnOnLED(req,res);
 });
 
 router.post('/turnOffLED',(req,res) => {
-    drillService.turnOffLED(req,res);
+    chipService.turnOffLED(req,res);
 });
 
 module.exports = router;

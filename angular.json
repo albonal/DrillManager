@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "DrillManager": {
+    "ChipManager": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:application": {
@@ -65,18 +65,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "DrillManager:build"
+            "browserTarget": "ChipManager:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "DrillManager:build:production"
+              "browserTarget": "ChipManager:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "DrillManager:build"
+            "browserTarget": "ChipManager:build"
           }
         },
         "test": {
@@ -113,16 +113,16 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "DrillManager:serve"
+            "devServerTarget": "ChipManager:serve"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "DrillManager:serve:production"
+              "devServerTarget": "ChipManager:serve:production"
             }
           }
         }
       }
     }
   },
-  "defaultProject": "DrillManager"
+  "defaultProject": "ChipManager"
 }

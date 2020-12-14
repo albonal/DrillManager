@@ -1,0 +1,18 @@
+<h2>Installed chips</h2>
+<ul class="chip">
+    <li *ngFor="let chip of chips" (click)="onSelect(chip)" [class.selected]="chip === selectedChip">
+        <div *ngIf="chip.mac!=''">
+            <div *ngIf="chip.location!=''">
+                <span class="badge">-</span>{{chip.location}}
+            </div>        
+            <div *ngIf="chip.location==''">
+                <span class="badge">-</span>{{chip.mac}}
+            </div>        
+        </div>        
+    </li>
+</ul>
+<app-chip-detail [chip]="selectedChip"></app-chip-detail>
+
+
+
+  

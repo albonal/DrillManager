@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const routes = require('./routes');
 const db = require('./mongo');
-const Status = require('./led');
+const Status = require('./chip/led');
 const root = './';
 const port = process.env.Port || 3000;
 const app = express();
@@ -27,16 +27,15 @@ const tcpServer = net.createServer(onClientConnection);
 tcpServer.listen(11000,ip.address(), function() {console.log (`tcp server started ${ip.address()}`);})
 
 
-const Drill = require('./drill.model');
+const Chip = require('./chip/chip.model');
 
 
 
-function logSensor(sensorId,sensorData) {
-    const originalDrill = {id: sensorId, name: sensorData };
-    const drill = new Drill(originalDrill);
-    drill.save(error => {
-        if (error) return;
-       
+function saveChip(mac) {
+    const chipData = {mac: mac};
+    const chip = new Chip(chipData);
+    chip.save(error => {
+        if (error)   return;
         console.log('data logged in database');
     });
 }
@@ -44,19 +43,21 @@ function logSensor(sensorId,sensorData) {
 function onClientConnection(sock) {
 
     sock.on('data',function(data) {
+        console.log(data.toString());
+        var mac = data.toString();
+        mac = mac.substring(mac.indexOf("[")+1,mac.indexOf("]"));
         var reply = "OK ";
-        if (data.includes("LOG_TEMPERATURE")) {
-            var d = data.toString();
-            var temperature = d.substring(d.lastIndexOf(":")+2,d.length);
-            logSensor("Temperature", new Date().toDateString() + " " + new Date().toLocaleTimeString() + ": " + temperature + "C");
+        if (data.includes("REGISTER_NEW_CHIP")) {
+            saveChip(mac);
             reply = reply + "Action:BLINK";
+            Status.setStatus(mac,"OFF");
         }
 
-        if (Status.getStatus() == "ON") {
+        if (Status.getStatus(mac) == "ON") {
             reply = reply + "Action:ON";
         }
 
-        if (Status.getStatus() == "OFF") {
+        if (Status.getStatus(mac) == "OFF") {
             reply = reply + "Action:OFF";
         }
 
