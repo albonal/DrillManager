@@ -32,11 +32,23 @@ function onClientConnection(sock) {
           reply = reply + "Action:BLINK";
         }
 
-        if (chip.switchStatus == "ON") {
+        if (chipInfo.includes("SWITCH:OFF") && (chip.switchStatus == "ON" || chip.switchStatus == "C_ON" )) {
+          chip.switchStatus="ON";
+          const newChip = new Chip(chip);
+          newChip.save(error => {
+            if (error) { return; }
+            console.log('data logged in database');
+          });
           reply = reply + "Action:ON";
         }
 
-        if ( chip.switchStatus == "OFF") {
+        if (chipInfo.includes("SWITCH:ON") && (chip.switchStatus == "OFF") || chip.switchStatus == "C_OFF" ){
+          chip.switchStatus="OFF";
+          const newChip = new Chip(chip);
+          newChip.save(error => {
+            if (error) { return; }
+            console.log('data logged in database');
+          });
           reply = reply + "Action:OFF";
         };
         sock.write(reply);
@@ -44,12 +56,6 @@ function onClientConnection(sock) {
       .catch(error => {
         return;
       });
-
-
-
-
-
-
 
   });
 
@@ -63,13 +69,25 @@ function onClientConnection(sock) {
 };
 
 
-
 function getChips(req, res) {
   const docquery = Chip.find({});
   docquery
     .exec()
     .then(chips => {
       res.status(200).json(chips);
+    })
+    .catch(error => {
+      res.status(500).send(error);
+      return;
+    });
+}
+
+function getChip(req, res) {
+  const docquery = Chip.findOne({mac:req.params.mac});
+  docquery
+    .exec()
+    .then(chip => {
+      res.status(201).json(chip);
     })
     .catch(error => {
       res.status(500).send(error);
@@ -128,7 +146,7 @@ function turnOnLED(req, res) {
   docquery
     .exec()
     .then(chip => {
-      chip.switchStatus = "ON";
+      chip.switchStatus = "C_ON";
       chip.save();
       res.status(201).json(chip);
     })
@@ -143,7 +161,7 @@ function turnOffLED(req, res) {
   docquery
     .exec()
     .then(chip => {
-      chip.switchStatus = "OFF";
+      chip.switchStatus = "C_OFF";
       chip.save();
       res.status(201).json(chip);
     })
@@ -163,6 +181,7 @@ function checkServerError(res, error) {
 module.exports = {
   onClientConnection,
   getChips,
+  getChip,
   postChip,
   updateChip,
   deleteChip,

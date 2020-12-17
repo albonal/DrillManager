@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const chipService = require('./chip/chip.service');
 
+
+router.get('/chip/:mac', (req,res) => {
+    chipService.getChip(req, res);
+});
+
 router.get('/chips', (req,res) => {
     chipService.getChips(req, res);
 });

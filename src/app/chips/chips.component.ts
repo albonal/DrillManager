@@ -30,19 +30,31 @@ export class ChipComponent implements OnInit {
     });
   }
 
-  
+  getChip() {
+    return this.chipsService.getChip(this.selectedChip).subscribe(chip => {
+      this.selectedChip = chip;
+    });
+  }
+
   turnOnLed() {
     this.chipsService.turnOnLed(this.selectedChip).subscribe(chip => {
       this.selectedChip = chip;
+      setTimeout(() => {
+        this.getChips();
+        this.getChip();
+      }, 5000);
     });
   }
 
   turnOffLed() {
     this.chipsService.turnOffLed(this.selectedChip).subscribe(chip => {
       this.selectedChip = chip;
+      setTimeout(() => {
+        this.getChips();
+        this.getChip();
+      }, 5000);
     });
   }
-
   delete() {
     this.chipsService.delete(this.selectedChip).subscribe(chip => {
       this.selectedChip = chip;

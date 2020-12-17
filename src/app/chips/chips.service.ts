@@ -15,6 +15,10 @@ export class ChipsService {
     return this.http.get<Array<Chip>>(`${api}/chips`);
   }
 
+  getChip(chip: Chip) {
+    return this.http.get<Chip>(`${api}/chip/${chip.mac}`);
+  }
+
   turnOnLed(chip: Chip) {
     return this.http.post<Chip>(`${api}/turnOnLed`, chip);
   }
