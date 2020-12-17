@@ -2,17 +2,19 @@
 <ul class="chip">
     <li *ngFor="let chip of chips" (click)="onSelect(chip)" [class.selected]="chip === selectedChip">
         <div *ngIf="chip.mac!=''">
-            <div *ngIf="chip.location!=''">
-                <span class="badge">-</span>{{chip.location}}
-            </div>        
-            <div *ngIf="chip.location==''">
-                <span class="badge">-</span>{{chip.mac}}
-            </div>        
-        </div>        
+            <span class="badge">-</span>{{chip.switchStatus}}-{{chip.sensorData}}-{{chip.location}}-{{chip.mac}}
+        </div>
     </li>
 </ul>
-<app-chip-detail [chip]="selectedChip"></app-chip-detail>
 
-
-
-  
+<div *ngIf="selectedChip.mac!=''" >
+    <h2>MAC: {{selectedChip.mac}}</h2>
+    <div>Description:<input [(ngModel)]="selectedChip.description" placeholder="what does it do?" /></div>
+    <div>Location:<input [(ngModel)]="selectedChip.location" placeholder="where is it?" /></div>
+    <div>Temperature: {{selectedChip.sensorData}} </div>
+    <div>Switch status: {{selectedChip.switchStatus}} </div>
+    <button (click)="turnOnLed()">ON</button>
+    <button (click)="turnOffLed()">OFF</button>
+    <button (click)="update()">Save</button>
+    <button (click)="delete()">Delete</button>
+</div>

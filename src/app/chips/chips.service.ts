@@ -1,7 +1,6 @@
-
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Chip } from '../chip-detail/chip';
+import { Chip } from './chip';
 
 const api = '/api';
 
@@ -16,11 +15,19 @@ export class ChipsService {
     return this.http.get<Array<Chip>>(`${api}/chips`);
   }
 
-  addChip(chip: Chip) {
-    return this.http.post<Chip>(`${api}/chip`,chip);
+  turnOnLed(chip: Chip) {
+    return this.http.post<Chip>(`${api}/turnOnLed`, chip);
   }
 
-  
+  turnOffLed(chip: Chip) {
+    return this.http.post<Chip>(`${api}/turnOffLed`, chip);
+  }
 
+  delete(chip: Chip) {
+    return this.http.delete<Chip>(`${api}/chip/${chip.mac}`);
+  }
 
+  update(chip: Chip) {
+    return this.http.put<Chip>(`${api}/chip/${chip.mac}`, chip);
+  }
 }

@@ -1,9 +1,0 @@
-<div *ngIf="chip.mac!=''">
-    <h2>MAC: {{chip.mac}}</h2>
-    <div>Description:<input [(ngModel)]="chip.description" placeholder="what does it do?"/></div>
-    <div>Location:<input [(ngModel)]="chip.location" placeholder="where is it?"/></div>
-    <button (click)="turnOnLed()">ON</button>
-    <button (click)="turnOffLed()">OFF</button>
-    <button (click)="update()">Save</button>
-    <button (click)="delete()">Delete</button>
-</div>

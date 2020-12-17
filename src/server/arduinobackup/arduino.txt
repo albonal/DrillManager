@@ -16,19 +16,22 @@ const uint16_t port = 11000;
 int buttonState = 0;
 const int tempSensorPin = 0;     // the number of the tempsensor that is also connected to a pushbutton pin
 const int ledPin =  2;
-const int aliveDelay = 5000;// 5secs
+const int aliveDelay = 5000;//
+const int readTemperatureDelay = 60000;// 1 minute
 
 DHT_Unified dht(tempSensorPin, DHT11);
 
- bool buttonReleased = true;
- unsigned long aliveTimer = millis();
-String lastTemperatureReading;
-
+bool buttonReleased = true;
+unsigned long aliveTimer = millis();
+unsigned long readTemperatureTimer = millis();
+long lastTemperatureReading;
+bool switch_active = false;
+String myMacAddress="";
 void setup() {
   Serial.begin(115200);
 
-  Log("Connecting to:", String(ssid),"","");
- 
+  Log("Connecting to:" + String(ssid));
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
@@ -38,43 +41,71 @@ void setup() {
   }
 
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
+  digitalWrite(ledPin, HIGH);
 
-  Log("WiFi connected:",toString(WiFi.localIP()),"","");
-  
+  Log("WiFi connected:" +  toString(WiFi.localIP()));
+
   //Initialise the temperature sensor
   pinMode(tempSensorPin, INPUT);
   dht.begin();
-  Log("Temperature sensor initialised","","","");
+  Log("Temperature sensor initialised");
+
+  myMacAddress = MyMACAddress();
 }
 
 void loop() {
 
-   buttonState = digitalRead(tempSensorPin);
+  buttonState = digitalRead(tempSensorPin);
 
   // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
   if (buttonState == HIGH) {
     // turn LED OFF:
-    buttonReleased=true;
-  } 
+    buttonReleased = true;
+  }
   if (buttonState == LOW) {
     if (buttonReleased == true) {
-        if (sendData("BUTTON_PRESSED: Temperature: " + lastTemperatureReading)) {
-          aliveTimer = millis();// Dont need to send the alive token if I've just pressed the button
-        }
-        buttonReleased = false;
+      if (sendData("MAC:" + myMacAddress + "BUTTON_PRESSED")) {
+        aliveTimer = millis();// Dont need to send the alive token if I've just pressed the button
+      }
+      buttonReleased = false;
     }
   }
 
+  String alive = "";
+  String temperatureData = "";
+
   //contact server every 5secs and send temperature reading
   if (millis() - aliveTimer > aliveDelay) {
-    sendData("ALIVE: Temperature: " + readTemperature());
+    alive = "ALIVE";
     aliveTimer = millis();
+  }
+
+
+  if (millis() - readTemperatureTimer > readTemperatureDelay) {
+    int output  = readTemperature();
+    if ( output == 2) {
+      temperatureData = "TEMPERATURE:Error";
+    }
+    if ( output == 1) {
+      temperatureData = "TEMPERATURE:" + String(lastTemperatureReading);
+    }
+    if ( output == 0) {
+      temperatureData = "TEMPERATURE:" + String(lastTemperatureReading); //No change
+    }
+    readTemperatureTimer = millis();
+  }
+
+  if (alive != "" || temperatureData != "") {
+    String switchStatus = "";
+    if (switch_active == false)  switchStatus = "SWITCH:OFF";
+    if (switch_active == true)   switchStatus = "SWITCH:ON";
+    if (temperatureData = "") temperatureData = "TEMPERATURE:" + String(lastTemperatureReading); //No change
+    sendData("MAC:" + myMacAddress + " " + switchStatus + " " + temperatureData);
   }
 }
 
 void blinkLed() {
- 
+
   digitalWrite(ledPin, HIGH);
   delay(100);
   digitalWrite(ledPin, LOW);
@@ -85,31 +116,33 @@ void blinkLed() {
 }
 
 bool sendData(String data) {
-  Log("Connecting to:",String(host),":",String(port));
+  Log("Connecting to:" + String(host) + ":" + String(port));
 
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
   if (!client.connect(host, port)) {
-    Log("Connection failed.","","","");
+    Log("Connection failed.");
     return false;
   }
 
   // This will send a string to the server
   if (client.connected()) {
+    data = myMacAddress + data;
     client.println(data);
-    Log("Data sent:",data,"","");
+    Log("Data sent:" + String(data));
   }
 
   // wait for data to be available
   unsigned long timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > 5000) {
-      Log("Client Timeout !","","","");
+      Log("Client Timeout !");
       client.stop();
       delay(5000);
       return false;
     }
   }
+
   Serial.println("");
   String dataReceived = "";
   while (client.available()) {
@@ -117,47 +150,59 @@ bool sendData(String data) {
     dataReceived = dataReceived + ch;
     Serial.print(ch);
   }
-  
-  if (dataReceived.indexOf("Action:BLINK")>0) {
-    blinkLed();blinkLed();blinkLed();blinkLed();
+  Serial.println("");
+
+  if (dataReceived.indexOf("Action:BLINK") > 0) {
+    blinkLed(); blinkLed(); blinkLed(); blinkLed();
   }
 
-  if (dataReceived.indexOf("Action:ON")>0) {
+  if (dataReceived.indexOf("Action:ON") > 0) {
     digitalWrite(ledPin, LOW);
+    switch_active = true;
   }
-    
-  if (dataReceived.indexOf("Action:OFF")>0) {
+
+  if (dataReceived.indexOf("Action:OFF") > 0) {
     digitalWrite(ledPin, HIGH);
+    switch_active = false;
   }
-  
+
   // Close the connection
-  Log("Closing connection","","","");
-  client.stop();
+  Log("Closing connection");
+  //client.stop(); //This raises an error on the server.
   return true;
 }
 
-void Log(String m1,String m2, String m3, String m4) {
-  Serial.println("");
-  Serial.print(m1);
-  Serial.print(m2);
-  Serial.print(m3);
-  Serial.print(m4);
+void Log(String m) {
+  Serial.println(m);
 }
 
-String toString( IPAddress address){
+String toString( IPAddress address) {
   return String() + address[0] + "." + address[1] + "." + address[2] + "." + address[3];
 }
 
-String readTemperature() {
-    String temperature;
-    sensors_event_t event;
-    dht.temperature().getEvent(&event);
-    if (isnan(event.temperature)) {
-      temperature = "Error reading";
+String MyMACAddress() {
+  byte mac[6];
+  WiFi.macAddress(mac);
+  return String("[") + String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX) + String("]");
+}
+
+int readTemperature() {
+  long temperature;
+  int output = 0;
+  sensors_event_t event;
+  dht.temperature().getEvent(&event);
+  if (isnan(event.temperature)) {
+    output = 2;
+  }
+  else {
+    temperature = event.temperature;
+    if (temperature == lastTemperatureReading) {
+      output = 0;
+    } else {
+      lastTemperatureReading = temperature;
+      output = 1;
     }
-    else {
-     temperature = event.temperature;
-    }
-    lastTemperatureReading = String(temperature);
-    return String(temperature);
+  }
+  Serial.println("Read temperature:" + String(output) + ":" + String(temperature));
+  return output;
 }
