@@ -4,8 +4,7 @@
 #include <ESP8266WiFi.h>
 
 const bool logEnabled = false;
-const char* ssid     = "lynton";
-const char* password = "VMh1c32s00";
+
 const char* host = "192.168.0.12";
 const uint16_t port = 11000;
 int buttonState = 0;
