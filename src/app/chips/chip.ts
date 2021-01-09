@@ -1,18 +1,21 @@
 export class Chip {
     mac: string;
-    description: string;
-    location: string;
+    name: string;
     sensorData: string | null;
     switchStatus: string | null;
+    activeAt: string| null;
+    lastActiveAt: string;
+    power: number| null;    
 
     constructor(mac: string,
-        description: string,
-        location: string) {
+        name: string) {
 
         this.mac = mac;
-        this.description = description;
-        this.location = location;
+        this.name = name;
         this.sensorData = null;
         this.switchStatus = null;
+        this.activeAt = null;
+        this.lastActiveAt="";
+        this.power =100;    
     }
 }

@@ -3,10 +3,9 @@ const Schema = mongoose.Schema;
 const chipSchema = new Schema(
   {
     mac: { type: String, unique: true, required: true },
-    description: { type: String },
-    location: { type: String },
-    sensorData: { type: String},
-    switchStatus: {type: String} // This could be in the future a power output 0 (OFF):100(Max). For now ON/OFF
+    name: { type: String },
+    switchStatus: {type: String}, 
+    power: {type: Number, min:0,max:100}
   },
   {
     collection: 'Chips'

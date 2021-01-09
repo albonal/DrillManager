@@ -3,35 +3,42 @@
 #include <DHT_U.h>
 #include <ESP8266WiFi.h>
 
-#ifndef STASSID
-#define STASSID "lynton"
-#define STAPSK  "VMh1c32s00"
-#endif
-
-const char* ssid     = STASSID;
-const char* password = STAPSK;
-
+const bool logEnabled = false;
+const char* ssid     = "lynton";
+const char* password = "VMh1c32s00";
 const char* host = "192.168.0.12";
 const uint16_t port = 11000;
 int buttonState = 0;
+bool buttonPressed = true;
 const int tempSensorPin = 0;     // the number of the tempsensor that is also connected to a pushbutton pin
 const int ledPin =  2;
-const int aliveDelay = 5000;//
+const int aliveDelay = 2000;//
 const int readTemperatureDelay = 60000;// 1 minute
-
 DHT_Unified dht(tempSensorPin, DHT11);
-
-bool buttonReleased = true;
 unsigned long aliveTimer = millis();
 unsigned long readTemperatureTimer = millis();
-long lastTemperatureReading;
-bool switch_active = false;
+const int ON = HIGH;
+const int OFF = LOW;
 String myMacAddress="";
+int connectionFailCounter = 0;
+const int connectionLost = 100; // Number of times of consecutives connection losts before turning off regardless
+int power =100;
+bool loadOn = false;
+
+unsigned long cycle = 500;
+unsigned long onFor;
+unsigned long offFor;
+int onoffstatus = OFF;
+unsigned long powerTimerOn = millis();
+unsigned long powerTimerOff = millis();
+
 void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(tempSensorPin, INPUT);
+  digitalWrite(ledPin, OFF);
   Serial.begin(115200);
 
-  Log("Connecting to:" + String(ssid));
-
+  LogData("Connecting to:" + String(ssid));
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
@@ -39,141 +46,186 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH);
-
-  Log("WiFi connected:" +  toString(WiFi.localIP()));
+  LogData("WiFi connected:" +  toString(WiFi.localIP()));
 
   //Initialise the temperature sensor
-  pinMode(tempSensorPin, INPUT);
   dht.begin();
-  Log("Temperature sensor initialised");
-
+  LogData("Temperature sensor initialised");
   myMacAddress = MyMACAddress();
 }
 
 void loop() {
-
-  buttonState = digitalRead(tempSensorPin);
-
-  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (buttonState == HIGH) {
-    // turn LED OFF:
-    buttonReleased = true;
-  }
-  if (buttonState == LOW) {
-    if (buttonReleased == true) {
-      if (sendData("MAC:" + myMacAddress + "BUTTON_PRESSED")) {
-        aliveTimer = millis();// Dont need to send the alive token if I've just pressed the button
-      }
-      buttonReleased = false;
-    }
-  }
-
   String alive = "";
   String temperatureData = "";
-
+  
+  buttonCheck();
+  
   //contact server every 5secs and send temperature reading
   if (millis() - aliveTimer > aliveDelay) {
     alive = "ALIVE";
     aliveTimer = millis();
   }
 
-
+  //send temperature every minute
   if (millis() - readTemperatureTimer > readTemperatureDelay) {
-    int output  = readTemperature();
-    if ( output == 2) {
-      temperatureData = "TEMPERATURE:Error";
-    }
-    if ( output == 1) {
-      temperatureData = "TEMPERATURE:" + String(lastTemperatureReading);
-    }
-    if ( output == 0) {
-      temperatureData = "TEMPERATURE:" + String(lastTemperatureReading); //No change
-    }
+    temperatureData = "TEMPERATURE:" + readTemperature();
     readTemperatureTimer = millis();
   }
 
   if (alive != "" || temperatureData != "") {
-    String switchStatus = "";
-    if (switch_active == false)  switchStatus = "SWITCH:OFF";
-    if (switch_active == true)   switchStatus = "SWITCH:ON";
-    if (temperatureData = "") temperatureData = "TEMPERATURE:" + String(lastTemperatureReading); //No change
-    sendData("MAC:" + myMacAddress + " " + switchStatus + " " + temperatureData);
+     if (temperatureData != "") temperatureData = " TEMPERATURE:" + String(temperatureData); 
+     comunicateWithServer("MAC:" + myMacAddress + temperatureData);
   }
+ 
+  if (connectionFailCounter>=connectionLost ) {
+    LogData("connectionFailCounter" + String(connectionFailCounter));  
+    loadOn = false;
+  }
+  
+  controlPowerLevel();
 }
 
-void blinkLed() {
+void basicOnOff() {
 
-  digitalWrite(ledPin, HIGH);
-  delay(100);
-  digitalWrite(ledPin, LOW);
-  delay(100);
-  digitalWrite(ledPin, HIGH);
-  delay(100);
-  digitalWrite(ledPin, LOW);
+if (loadOn == false) {
+    onoffstatus = OFF; 
+  } else {
+    onoffstatus = ON; 
+  }
+  digitalWrite(ledPin, onoffstatus);
 }
 
-bool sendData(String data) {
-  Log("Connecting to:" + String(host) + ":" + String(port));
+
+void controlPowerLevel() {
+
+  //The load should always have at least one full cycle of the mains 50hz:20ms
+  cycle = 200;// the minimum value is 10% power. so that will be one cycle
+    
+  if (loadOn == false || power == 0) {
+    LogData("controlPowerLevel, loadOn:" + String(loadOn) + " Power:" + String(power)); 
+    onoffstatus = OFF; 
+  } else {
+    onFor=power * cycle /100;
+    offFor=cycle - onFor;
+    if (onoffstatus == ON && (millis() - powerTimerOn >= onFor)) {
+      powerTimerOff = millis();
+      onoffstatus = OFF;
+      LogData("change to OFF"); 
+    }
+  
+    if (onoffstatus == OFF && (millis() - powerTimerOff >= offFor)) {
+      powerTimerOn = millis();
+      onoffstatus = ON; 
+      LogData("change to ON"); 
+    }
+  }
+  digitalWrite(ledPin, onoffstatus);
+}
+
+bool comunicateWithServer(String send_Data) {
+  LogData("Connecting to:" + String(host) + ":" + String(port));
 
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
   if (!client.connect(host, port)) {
-    Log("Connection failed.");
+    LogData("Connection failed.");
+    if (connectionFailCounter<=connectionLost) {
+      connectionFailCounter = connectionFailCounter +1;
+    }
     return false;
   }
 
   // This will send a string to the server
   if (client.connected()) {
-    data = myMacAddress + data;
-    client.println(data);
-    Log("Data sent:" + String(data));
+    send_Data = myMacAddress + send_Data;
+    client.println(send_Data);
+    LogData("Data sent:" + String(send_Data));
   }
 
   // wait for data to be available
   unsigned long timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > 5000) {
-      Log("Client Timeout !");
+      LogData("Client Timeout !");
+      if (connectionFailCounter<=connectionLost) {
+       connectionFailCounter = connectionFailCounter +1;
+      }
       client.stop();
       delay(5000);
       return false;
     }
   }
 
-  Serial.println("");
+  LogData("");
   String dataReceived = "";
   while (client.available()) {
     char ch = static_cast<char>(client.read());
     dataReceived = dataReceived + ch;
     Serial.print(ch);
   }
-  Serial.println("");
+  LogData("");
+  LogData("Data received:" + String(dataReceived));  
 
-  if (dataReceived.indexOf("Action:BLINK") > 0) {
-    blinkLed(); blinkLed(); blinkLed(); blinkLed();
+  int pindexStart = dataReceived.indexOf("Action:POWER[") > 0;
+  if (pindexStart > 0) {
+    int pindexEnd = dataReceived.indexOf("]", pindexStart);
+    pindexStart = dataReceived.indexOf("[", pindexStart);
+    String s_power=dataReceived.substring(pindexStart+1,pindexEnd);
+    LogData("s_power:" + s_power);
+    power = s_power.toInt();
+    if (power>100) power = 100;
+    if (power<0) power = 0;
   }
-
+  
   if (dataReceived.indexOf("Action:ON") > 0) {
-    digitalWrite(ledPin, LOW);
-    switch_active = true;
+   loadOn = true;
+    LogData("Load On");
   }
 
   if (dataReceived.indexOf("Action:OFF") > 0) {
-    digitalWrite(ledPin, HIGH);
-    switch_active = false;
+    LogData("Load Off");
+    loadOn=false;
   }
 
   // Close the connection
-  Log("Closing connection");
+  LogData("Closing connection");
+  connectionFailCounter =0;
   //client.stop(); //This raises an error on the server.
   return true;
 }
 
-void Log(String m) {
-  Serial.println(m);
+String readTemperature() {
+  String temperature;
+  sensors_event_t event;
+  dht.temperature().getEvent(&event);
+  if (isnan(event.temperature)) {
+    temperature = "Error";
+  }
+  else {
+    temperature = String(event.temperature);
+  }
+  LogData("Read temperature:" + temperature);
+  return temperature;
+}
+
+void buttonCheck() {
+  buttonState = digitalRead(tempSensorPin);
+  if (buttonState == LOW)  buttonPressed = true;
+  
+  //The button has been pressed and then released
+  if (buttonPressed && buttonState == HIGH)  { 
+    comunicateWithServer("MAC:" + myMacAddress + "BUTTON_PRESSED");
+    buttonPressed = false;
+  }
+}
+
+void LogData(String data) {
+  if (logEnabled) {
+    Serial.println(data);
+  }
+}
+void blinkLed() {
+  digitalWrite(ledPin, HIGH);delay(100);digitalWrite(ledPin, LOW);delay(100); digitalWrite(ledPin, HIGH);delay(100);digitalWrite(ledPin, LOW);
 }
 
 String toString( IPAddress address) {
@@ -184,25 +236,4 @@ String MyMACAddress() {
   byte mac[6];
   WiFi.macAddress(mac);
   return String("[") + String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX) + String("]");
-}
-
-int readTemperature() {
-  long temperature;
-  int output = 0;
-  sensors_event_t event;
-  dht.temperature().getEvent(&event);
-  if (isnan(event.temperature)) {
-    output = 2;
-  }
-  else {
-    temperature = event.temperature;
-    if (temperature == lastTemperatureReading) {
-      output = 0;
-    } else {
-      lastTemperatureReading = temperature;
-      output = 1;
-    }
-  }
-  Serial.println("Read temperature:" + String(output) + ":" + String(temperature));
-  return output;
 }
