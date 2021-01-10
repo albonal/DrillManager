@@ -3,9 +3,9 @@ export class Chip {
     name: string;
     sensorData: string | null;
     switchStatus: string | null;
-    activeAt: string| null;
-    lastActiveAt: string;
-    power: number| null;    
+    activeAt: number;
+    power: number| null;
+    connected: boolean|null;
 
     constructor(mac: string,
         name: string) {
@@ -14,8 +14,8 @@ export class Chip {
         this.name = name;
         this.sensorData = null;
         this.switchStatus = null;
-        this.activeAt = null;
-        this.lastActiveAt="";
-        this.power =100;    
+        this.activeAt=0;
+        this.power =100;
+        this.connected = false;
     }
 }

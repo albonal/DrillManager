@@ -1,15 +1,25 @@
 /* Chip's private CSS styles */
-
-
   
+.mat-chip-list-stacked {
+  padding:5px;
+}
 .mat-chip {
- height: 50px;
+ height: 75px;
 }
 
 .mat-chip-table td {
-  padding:5px;
+  padding:2px;
 }
 
-mat-slider {
+.mat-slider {
   width: 100px;
 }
+
+.mat-form-field {
+  width: 120px;
+  font-size: medium;
+}
+
+
+
+

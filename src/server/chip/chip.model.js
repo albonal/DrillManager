@@ -4,7 +4,9 @@ const chipSchema = new Schema(
   {
     mac: { type: String, unique: true, required: true },
     name: { type: String },
-    switchStatus: {type: String}, 
+    switchStatus: {type: String },
+    activeAt: {type: Number },
+    sensorData: {type: Number },
     power: {type: Number, min:0,max:100}
   },
   {

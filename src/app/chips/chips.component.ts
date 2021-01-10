@@ -2,6 +2,8 @@ import { FormsModule } from '@angular/forms';
 import { Chip } from './chip';
 import { Component, OnInit, Input } from '@angular/core';
 import { ChipsService } from './chips.service';
+const connectionTimeout =5000;
+const autoRefresh = 2000;
 
 @Component({
   selector: 'app-chip',
@@ -9,11 +11,12 @@ import { ChipsService } from './chips.service';
   styleUrls: ['./chips.component.css']
 })
 
+
 export class ChipComponent implements OnInit {
   chips: Chip[] = [];
 
-  @Input() 
-  selectedChip: Chip = new Chip("","");
+  // @Input() 
+  // selectedChip: Chip = new Chip("","");
 
   constructor(private chipsService: ChipsService) { }
 
@@ -23,79 +26,64 @@ export class ChipComponent implements OnInit {
 
   onChange(ob :any, chip: Chip) {
     if (ob.checked) {
-      this.selectedChip = chip;
-      this.turnOnLed(); 
+      chip.switchStatus = "ON";
+      this.turnOnLed(chip); 
     } else {
-      this.selectedChip = chip;
-      this.turnOffLed();
+      chip.switchStatus = "OFF";
+      this.turnOffLed(chip);
     }
   } 
 
   onSliderChange(ob :any, chip: Chip) {
-    this.selectedChip = chip;
-    this.update();
+    this.update(chip);
   } 
-
-
-  onSelect(chip: Chip) {
-    this.selectedChip = chip;
-  }
 
   refreshData() {
     this.getChips();
-    this.getChip();
   }
 
-  setLastActiveTime(element: Chip) {
-    if (element.activeAt != null) {
-      var eventStartTime = new Date(element.activeAt);
-      var eventEndTime = new Date();
-      element.lastActiveAt = Math.round(((eventEndTime.valueOf() - eventStartTime.valueOf())/1000)).toString();
-    }
-    return element;
-  }
 
   getChips() {
     return this.chipsService.getChips().subscribe(chips => {
-      chips.forEach(element => {
-        element = this.setLastActiveTime(element);
+      chips.forEach(chip => {
+        if (chip.activeAt != null) {
+          chip.connected = Date.now() - chip.activeAt<connectionTimeout;
+        } else {
+          chip.connected = false;
+        }
+    
+        if (chip.connected == false && chip.switchStatus === "ON") {
+          chip.switchStatus = "OFF";
+          this.update(chip);
+        }
       });
       this.chips = chips;
     });
   }
 
-  getChip() {
-    return this.chipsService.getChip(this.selectedChip).subscribe(chip => {
-      this.selectedChip = this.setLastActiveTime(chip);;
+
+  turnOnLed(chip: Chip) {
+    this.chipsService.turnOnLed(chip).subscribe(chip => {
+      setTimeout(() => { this.refreshData()}, autoRefresh);
     });
   }
 
-  turnOnLed() {
-    this.chipsService.turnOnLed(this.selectedChip).subscribe(chip => {
-      this.selectedChip = chip;
-      setTimeout(() => { this.refreshData()}, 5000);
-    });
-  }
-
-  turnOffLed() {
-    this.chipsService.turnOffLed(this.selectedChip).subscribe(chip => {
-      this.selectedChip = chip;
-      setTimeout(() => { this.refreshData()}, 5000);
+  turnOffLed(chip: Chip) {
+    this.chipsService.turnOffLed(chip).subscribe(chip => {
+      setTimeout(() => { this.refreshData()}, autoRefresh);
     });
   }
 
   delete(chip: Chip) {
-    this.selectedChip = chip;
-    this.chipsService.delete(this.selectedChip).subscribe(chip => {
-      this.selectedChip.mac = "";
-      setTimeout(() => { this.refreshData()}, 5000);
+    this.chipsService.delete(chip).subscribe(chip => {
+      chip.connected = false;
+      chip.mac="";
+      setTimeout(() => { this.refreshData()}, autoRefresh);
     });
   }
 
-  update() {
-    this.chipsService.update(this.selectedChip).subscribe(chip => {
-      this.selectedChip = chip;
+  update(chip: Chip) {
+    this.chipsService.update(chip).subscribe(chip => {
     });
   }
-
 }

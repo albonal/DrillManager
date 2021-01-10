@@ -3,8 +3,9 @@
 #include <DHT_U.h>
 #include <ESP8266WiFi.h>
 
-const bool logEnabled = false;
-
+const bool logEnabled = true;
+const char* ssid     = "lynton";
+const char* password = "x";
 const char* host = "192.168.0.12";
 const uint16_t port = 11000;
 int buttonState = 0;
@@ -30,6 +31,7 @@ unsigned long offFor;
 int onoffstatus = OFF;
 unsigned long powerTimerOn = millis();
 unsigned long powerTimerOff = millis();
+String temperatureData = "";
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -55,7 +57,6 @@ void setup() {
 
 void loop() {
   String alive = "";
-  String temperatureData = "";
   
   buttonCheck();
   
@@ -66,34 +67,23 @@ void loop() {
   }
 
   //send temperature every minute
-  if (millis() - readTemperatureTimer > readTemperatureDelay) {
-    temperatureData = "TEMPERATURE:" + readTemperature();
+  if (temperatureData == "" || millis() - readTemperatureTimer > readTemperatureDelay) {
+    temperatureData = "TEMPERATURE:[" + readTemperature() + "]";
     readTemperatureTimer = millis();
   }
 
-  if (alive != "" || temperatureData != "") {
-     if (temperatureData != "") temperatureData = " TEMPERATURE:" + String(temperatureData); 
-     comunicateWithServer("MAC:" + myMacAddress + temperatureData);
+  if (alive != "") {
+     comunicateWithServer(temperatureData);
   }
  
   if (connectionFailCounter>=connectionLost ) {
     LogData("connectionFailCounter" + String(connectionFailCounter));  
     loadOn = false;
+    power == 0;
   }
   
   controlPowerLevel();
 }
-
-void basicOnOff() {
-
-if (loadOn == false) {
-    onoffstatus = OFF; 
-  } else {
-    onoffstatus = ON; 
-  }
-  digitalWrite(ledPin, onoffstatus);
-}
-
 
 void controlPowerLevel() {
 
@@ -103,19 +93,23 @@ void controlPowerLevel() {
   if (loadOn == false || power == 0) {
     LogData("controlPowerLevel, loadOn:" + String(loadOn) + " Power:" + String(power)); 
     onoffstatus = OFF; 
-  } else {
+  } 
+
+  if (loadOn == true && power == 100) {
+    onoffstatus = ON;
+  }
+  
+  if (loadOn == true && power > 0) {
     onFor=power * cycle /100;
     offFor=cycle - onFor;
     if (onoffstatus == ON && (millis() - powerTimerOn >= onFor)) {
       powerTimerOff = millis();
       onoffstatus = OFF;
-      LogData("change to OFF"); 
     }
   
     if (onoffstatus == OFF && (millis() - powerTimerOff >= offFor)) {
       powerTimerOn = millis();
       onoffstatus = ON; 
-      LogData("change to ON"); 
     }
   }
   digitalWrite(ledPin, onoffstatus);
@@ -213,7 +207,7 @@ void buttonCheck() {
   
   //The button has been pressed and then released
   if (buttonPressed && buttonState == HIGH)  { 
-    comunicateWithServer("MAC:" + myMacAddress + "BUTTON_PRESSED");
+    comunicateWithServer("BUTTON_PRESSED");
     buttonPressed = false;
   }
 }
@@ -234,5 +228,5 @@ String toString( IPAddress address) {
 String MyMACAddress() {
   byte mac[6];
   WiFi.macAddress(mac);
-  return String("[") + String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX) + String("]");
+  return String("MAC:[") + String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX) + String("]");
 }

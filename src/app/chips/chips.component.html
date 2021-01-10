@@ -1,24 +1,38 @@
 <mat-chip-list class="mat-chip-list-stacked" aria-label="Chips">
     <table>
         <tr class="mat-chip-table">
-            <mat-chip *ngFor="let chip of chips" (click)="onSelect(chip)" [class.selected]="chip === selectedChip" >
-                <td>{{chip.name}}</td>
-                <td><mat-slide-toggle [checked]="chip.switchStatus ==='ON'" (change)="onChange($event,chip)"></mat-slide-toggle>    </td>
+            <mat-chip *ngFor="let chip of chips" 
+                [removable]=true
+                [disabled]="chip.connected==false" >
                 <td>
+                     <mat-form-field >
+                        <mat-label>Location</mat-label>
+                        <input matInput placeholder="{{chip.mac}}" [(ngModel)]="chip.name">
+                     </mat-form-field>
+                <td>
+                   <mat-icon matChipRemove (click)="update(chip)" matSuffix>save</mat-icon>
+                </td>
+                <td><mat-slide-toggle 
+                    [disabled]="chip.connected==false"
+                    [checked]="chip.switchStatus ==='ON'" (change)="onChange($event,chip)"></mat-slide-toggle>    </td>
+                <td>
+                    <div style="position:relative;top:15px;left:45px">
+                        <mat-label>{{chip.power}}%</mat-label>
+                    </div>
                     <mat-slider
                         (change)="onSliderChange($event,chip)"
-                        [disabled]="selectedChip.switchStatus ==='OFF'"
+                        [disabled]="chip.connected==false || chip.switchStatus ==='OFF'"
                         [max]="100"
-                        [min]="0"
+                        [min]="10"
                         [step]="10"
                         [(ngModel)]="chip.power">
                     </mat-slider>
+                    <div style="position:relative;top:-15px;left:20x">
+                        <mat-label>Temperature: {{chip.sensorData}}&#8451;</mat-label>
+                    </div>
                 </td>
-                <td>{{chip.sensorData}}</td>
                 <td>
-                    <button mat-mini-fab color="accent" aria-label="Delete" (click)="delete(chip)">
-                        <mat-icon>delete</mat-icon>
-                    </button> 
+                    <mat-icon matChipRemove (click)="delete(chip)">delete</mat-icon>
                 </td>
             </mat-chip>
         </tr>
@@ -26,12 +40,3 @@
   </mat-chip-list>
 
 
-<div *ngIf="selectedChip.mac!=''" >
-    <div>MAC: {{selectedChip.mac}}</div>
-    <div>Name:<input [(ngModel)]="selectedChip.name"  /></div>
-    <div>Power:{{selectedChip.power}}</div>
-    <div>Active: {{selectedChip.lastActiveAt}}s ago</div>
-    <button mat-mini-fab color="accent" aria-label="Save" (click)="update()">
-        <mat-icon>save</mat-icon>
-    </button> 
-</div>

@@ -2,34 +2,40 @@ const Chip = require('./chip.model');
 
 global.globalChips = {};
 
+function findData(key,data) {
+ 
+  if (data.includes(key)) {
+    var starIndex = data.indexOf(key);
+    starIndex = data.indexOf("[",starIndex);
+    var endIndex= data.indexOf("]",starIndex);
+    return data.substring(starIndex+1, endIndex);
+  } else {
+    return "";
+  }
+}
+
 // Each chip will try to connect the server once every 5secs
 function onClientConnection(sock) {
 
   sock.on('data', function (data) {
     console.log(data.toString());
     var chipInfo = data.toString();
-    mac = chipInfo.substring(chipInfo.indexOf("[") + 1, chipInfo.indexOf("]"));
+    mac = findData("MAC",chipInfo);
     var reply = "OK ";
-    if (mac == undefined || mac == '') return;
+    if (mac == '') return;
 
     //Find mac in the collection
     if (globalChips[mac] != undefined) {
       chip = globalChips[mac];
 
-      if (chipInfo.includes("TEMPERATURE")) {
-        var temp = chipInfo.substring(chipInfo.indexOf("T:") + 12, chipInfo.length);
-        if (chip.sensorData != temp) {
-          chip.sensorData = temp;
-        }
-      }
-
+      chip.sensorData = findData ("TEMPERATURE",chipInfo)
+      chip.activeAt = Date.now();
       if (chipInfo.includes("BUTTON_PRESSED")) {
         // Decide what to do when the button is pressed
+      chip.sensorData = "button presse";
       }
     
       reply = reply + " Action:" + chip.switchStatus;
-
-    
       reply = reply + " Action:POWER[" + chip.power + "]";      
       sock.write(reply);
     } else {
@@ -51,7 +57,7 @@ function onClientConnection(sock) {
             if (error) { return; }
             console.log('data logged in database');
           });
-
+          chip.activeAt = Date.now();
           globalChips[mac] = chip;
           //Send the reply to the chip
           sock.write(reply);
@@ -77,6 +83,23 @@ function getChips(req, res) {
   docquery
     .exec()
     .then(chips => {
+      chips.forEach(c=> {
+        if (globalChips[c.mac]!=undefined) {
+          c.switchStatus=globalChips[c.mac].switchStatus;
+          c.activeAt=globalChips[c.mac].activeAt;
+          c.sensorData=globalChips[c.mac].sensorData;
+        } else {
+          const newChip = {
+            mac: c.mac,
+            name: c.name,
+            switchStatus: "OFF",
+            power: 100
+          };
+
+          globalChips[c.mac] = newChip;
+          globalChips[c.mac].activeAt = Date.now();
+        }
+    });
       res.status(200).json(chips);
     })
     .catch(error => {
@@ -102,8 +125,8 @@ function postChip(req, res) {
   const newChip = {
     mac: req.body.mac,
     name: req.body.name,
-    power: req.body.power,
-    switchStatus: req.body.switchStatus
+    switchStatus: req.body.switchStatus,
+    power: req.body.power
   };
   const chip = new Chip(newChip);
   chip.save(error => {
@@ -119,8 +142,8 @@ function updateChip(req, res) {
   const selectedChip = {
     mac: req.params.mac,
     name: req.body.name,
-    power: req.body.power,
-    switchStatus: req.body.switchStatus
+    switchStatus: req.body.switchStatus,
+    power: req.body.power
   };
 
   Chip.findOneAndUpdate({ mac: req.params.mac }, selectedChip)
