@@ -1,6 +1,6 @@
 <mat-chip-list class="mat-chip-list-stacked" aria-label="Chips">
-    <table>
-        <tr class="mat-chip-table">
+    <table class="mat-chip-table">
+        <tr>
             <mat-chip *ngFor="let chip of chips" 
                 [removable]=true
                 [disabled]="chip.connected==false" >
@@ -38,5 +38,4 @@
         </tr>
     </table>
   </mat-chip-list>
-
 

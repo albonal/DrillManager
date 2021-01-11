@@ -5,6 +5,7 @@
 }
 .mat-chip {
  height: 75px;
+ max-width: 368px;
 }
 
 .mat-chip-table td {

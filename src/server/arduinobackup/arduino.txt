@@ -3,13 +3,13 @@
 #include <DHT_U.h>
 #include <ESP8266WiFi.h>
 
-const bool logEnabled = true;
+const bool logEnabled = false;
 const char* ssid     = "lynton";
-const char* password = "x";
+const char* password = "VMh1c32s00";
 const char* host = "192.168.0.12";
 const uint16_t port = 11000;
 int buttonState = 0;
-bool buttonPressed = true;
+bool buttonPressed = false;
 const int tempSensorPin = 0;     // the number of the tempsensor that is also connected to a pushbutton pin
 const int ledPin =  2;
 const int aliveDelay = 2000;//
@@ -31,6 +31,8 @@ unsigned long offFor;
 int onoffstatus = OFF;
 unsigned long powerTimerOn = millis();
 unsigned long powerTimerOff = millis();
+bool buttonPressedFlag = false;
+unsigned long buttonPressedTimer=0;
 String temperatureData = "";
 
 void setup() {
@@ -57,9 +59,7 @@ void setup() {
 
 void loop() {
   String alive = "";
-  
-  buttonCheck();
-  
+    
   //contact server every 5secs and send temperature reading
   if (millis() - aliveTimer > aliveDelay) {
     alive = "ALIVE";
@@ -83,6 +83,8 @@ void loop() {
   }
   
   controlPowerLevel();
+
+  buttonCheck();
 }
 
 void controlPowerLevel() {
@@ -91,7 +93,6 @@ void controlPowerLevel() {
   cycle = 200;// the minimum value is 10% power. so that will be one cycle
     
   if (loadOn == false || power == 0) {
-    LogData("controlPowerLevel, loadOn:" + String(loadOn) + " Power:" + String(power)); 
     onoffstatus = OFF; 
   } 
 
@@ -154,7 +155,6 @@ bool comunicateWithServer(String send_Data) {
   while (client.available()) {
     char ch = static_cast<char>(client.read());
     dataReceived = dataReceived + ch;
-    Serial.print(ch);
   }
   LogData("");
   LogData("Data received:" + String(dataReceived));  
@@ -172,11 +172,9 @@ bool comunicateWithServer(String send_Data) {
   
   if (dataReceived.indexOf("Action:ON") > 0) {
    loadOn = true;
-    LogData("Load On");
   }
 
   if (dataReceived.indexOf("Action:OFF") > 0) {
-    LogData("Load Off");
     loadOn=false;
   }
 
@@ -202,11 +200,27 @@ String readTemperature() {
 }
 
 void buttonCheck() {
+ 
   buttonState = digitalRead(tempSensorPin);
-  if (buttonState == LOW)  buttonPressed = true;
+  
+  if (buttonState == LOW && buttonPressedFlag == false) {
+    buttonPressedFlag = true;  
+    buttonPressedTimer = millis();  
+  }
+  
+  if (buttonState == HIGH)  { 
+    buttonPressedFlag = false;
+  }
+  
+  LogData("buttonState:" + String(buttonState) + " buttonPressedFlag:"+ String(buttonPressedFlag) + " buttonPressedTimer:" + String(buttonPressedTimer));
+  
+  if (buttonPressedFlag && millis()-buttonPressedTimer>50) {
+      buttonPressed = true;
+  }
   
   //The button has been pressed and then released
   if (buttonPressed && buttonState == HIGH)  { 
+    LogData("Button pressed");
     comunicateWithServer("BUTTON_PRESSED");
     buttonPressed = false;
   }
