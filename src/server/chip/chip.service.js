@@ -32,9 +32,14 @@ function onClientConnection(sock) {
       chip.activeAt = Date.now();
       if (chipInfo.includes("BUTTON_PRESSED")) {
         // Decide what to do when the button is pressed
-      chip.sensorData = "button presse";
+        reply = reply + " DURATION[10]";
+        chip.switchStatus = "ON";
       }
-    
+
+      if (chipInfo.includes("TIMER_OFF")) {
+        // Decide what to do when the button is pressed
+        chip.switchStatus = "OFF";
+      }     
       reply = reply + " Action:" + chip.switchStatus;
       reply = reply + " Action:POWER[" + chip.power + "]";      
       sock.write(reply);
